@@ -16,6 +16,9 @@ export default function TabLayout() {
             tabBarIcon: ({ color, size }) => (
               <FontAwesome name="home" size={size} color={color} />
             ),
+            tabBarLabelStyle: {
+              fontFamily: 'Jersey25-Regular',
+            },
           }}
         />
         <Tabs.Screen
@@ -26,6 +29,9 @@ export default function TabLayout() {
             tabBarIcon: ({ color, size }) => (
               <FontAwesome name="book" size={size} color={color} />
             ),
+            tabBarLabelStyle: {
+              fontFamily: 'Jersey25-Regular',
+            },
           }}
         />
       </Tabs>

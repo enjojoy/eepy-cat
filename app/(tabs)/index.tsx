@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Button, Image } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Image } from 'react-native';
 import { useRecording } from '../context/RecordingContext';
 
 export default function App() {
@@ -24,7 +24,10 @@ export default function App() {
             {isTracking ? (
                 <Text style={styles.trackingIndicator}>Recording Sleep...</Text>
             ) : (
-                canClaimTokens && <Button title="Claim Tokens" onPress={claimTokens} />
+                canClaimTokens && 
+                <TouchableOpacity style={styles.button} onPress={claimTokens}>
+                  <Text style={styles.buttonText}>Claim Tokens</Text>
+                </TouchableOpacity>
             )}
         </View>
       </View>
@@ -52,6 +55,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     color: '#add8e6',
+    fontFamily: 'Jersey25-Regular',
   },
   statsContainer: {
     marginBottom: 20,
@@ -60,6 +64,7 @@ const styles = StyleSheet.create({
   statText: {
     fontSize: 18,
     fontWeight: 'bold',
+    fontFamily: 'Jersey25-Regular',
   },
   buttonContainer: {
     position: 'absolute',
@@ -79,6 +84,7 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 18,
     textAlign: 'center',
+    fontFamily: 'Jersey25-Regular',
   },
   bottomContentContainer: {
     height: 50,

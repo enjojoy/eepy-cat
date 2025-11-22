@@ -24,8 +24,8 @@ const LiveRecording = () => {
     return (
         <View style={styles.liveRecordingContainer}>
             <Text style={styles.liveRecordingTitle}>Live Recording</Text>
-            <Text>Duration: {(duration / 1000).toFixed(0)} seconds</Text>
-            <Text>Current Movement: {totalMovement.toFixed(2)}</Text>
+            <Text style={styles.baseText}>Duration: {(duration / 1000).toFixed(0)} seconds</Text>
+            <Text style={styles.baseText}>Current Movement: {totalMovement.toFixed(2)}</Text>
         </View>
     );
 };
@@ -52,10 +52,10 @@ export default function RecordingsScreen() {
     const totalMovement = item.movementData.reduce((acc, curr) => acc + curr.movement, 0);
     return (
       <View style={styles.sleepItem}>
-        <Text>Start: {new Date(item.startTime).toLocaleString()}</Text>
-        <Text>End: {new Date(item.endTime).toLocaleString()}</Text>
-        <Text>Duration: {(item.duration / 1000 / 60).toFixed(2)} minutes</Text>
-        <Text>Total Movement: {totalMovement.toFixed(2)}</Text>
+        <Text style={styles.baseText}>Start: {new Date(item.startTime).toLocaleString()}</Text>
+        <Text style={styles.baseText}>End: {new Date(item.endTime).toLocaleString()}</Text>
+        <Text style={styles.baseText}>Duration: {(item.duration / 1000 / 60).toFixed(2)} minutes</Text>
+        <Text style={styles.baseText}>Total Movement: {totalMovement.toFixed(2)}</Text>
       </View>
     );
   };
@@ -122,6 +122,9 @@ export default function RecordingsScreen() {
 }
 
 const styles = StyleSheet.create({
+  baseText: {
+    fontFamily: 'Jersey25-Regular',
+  },
   container: {
     flex: 1,
     padding: 20,
@@ -151,6 +154,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 15,
     marginTop: 60, // Adjust margin to not be overlapped by header
+    fontFamily: 'Jersey25-Regular',
   },
   centeredView: {
     flex: 1,
@@ -183,6 +187,7 @@ const styles = StyleSheet.create({
   },
   settingText: {
     fontSize: 18,
+    fontFamily: 'Jersey25-Regular',
   },
   button: {
     backgroundColor: '#007BFF',
@@ -204,6 +209,7 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 18,
     textAlign: 'center',
+    fontFamily: 'Jersey25-Regular',
   },
   liveRecordingContainer: {
     padding: 15,
@@ -217,5 +223,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 5,
+    fontFamily: 'Jersey25-Regular',
   },
 });
