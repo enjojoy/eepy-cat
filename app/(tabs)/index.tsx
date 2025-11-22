@@ -175,7 +175,7 @@ const styles = StyleSheet.create({
   },
   button: {
     backgroundColor: '#D4BFFF',
-    padding: 15,
+    padding: 20,
     borderRadius: 10,
     marginBottom: 10,
     width: '80%',
@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: 'white',
-    fontSize: 18,
+    fontSize: 28,
     textAlign: 'center',
     fontFamily: 'Jersey25-Regular',
   },
