@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Button, Modal, Switch } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Button, Modal, Switch, Image } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Gyroscope } from 'expo-sensors';
 import { SleepData } from '@/types/sleep';
@@ -203,6 +203,11 @@ export default function App() {
         </View>
       </Modal>
 
+      <Image 
+        source={isTracking ? require('../../assets/images/sleeping_cat.png') : require('../../assets/images/awake_cat.png')}
+        style={styles.mascot}
+      />
+
       {isTracking && <Text style={styles.trackingIndicator}>Recording Sleep...</Text>}
       <View style={styles.statsContainer}>
         <Text style={styles.statText}>Sleep Streak: {userData.streak}</Text>
@@ -241,6 +246,11 @@ const styles = StyleSheet.create({
   },
   testingContainer: {
     backgroundColor: '#d4edda', // Light green for testing mode
+  },
+  mascot: {
+    width: 200,
+    height: 200,
+    marginBottom: 20,
   },
   trackingIndicator: {
     fontSize: 24,
