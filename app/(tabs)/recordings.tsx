@@ -16,7 +16,12 @@ export default function RecordingsScreen() {
     const loadData = async () => {
       try {
         const storedSleepData = await AsyncStorage.getItem(SLEEP_STORAGE_KEY);
-        if (storedSleepData) setSleepData(JSON.parse(storedSleepData));
+        if (storedSleepData) {
+          const parsedData = JSON.parse(storedSleepData);
+          // Sort the data in reverse chronological order
+          const sortedData = parsedData.sort((a: SleepData, b: SleepData) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
+          setSleepData(sortedData);
+        }
 
         const storedUserData = await AsyncStorage.getItem(USER_STORAGE_KEY);
         if (storedUserData) setUserData(JSON.parse(storedUserData));
