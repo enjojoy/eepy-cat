@@ -135,22 +135,22 @@ const styles = StyleSheet.create({
     backgroundColor: '#d4edda', // Light green for testing mode
   },
   mascotContainer: {
-    width: 260,
-    height: 260,
+    width: 350,
+    height: 350,
     marginBottom: 20,
     zIndex: 1, // Ensure cat is on top of stars
   },
   mascot: {
-    width: 260,
-    height: 260,
+    width: 350,
+    height: 350,
     marginBottom: 20,
   },
   chatbox: {
     width: 200,
     height: 65,
     position: 'absolute',
-    top: -35,
-    left: -80,
+    top: 0,
+    left: -20,
   },
   trackingIndicator: {
     fontSize: 24,
