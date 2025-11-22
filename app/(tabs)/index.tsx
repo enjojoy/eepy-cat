@@ -108,6 +108,7 @@ export default function App() {
 
   const toggleTracking = async () => {
     if (isTracking) {
+      setIsTracking(false);
       const endTime = Date.now();
       if (startTime) {
         const duration = endTime - startTime;
@@ -120,7 +121,6 @@ export default function App() {
         await saveSleepData(updatedSleepData);
         await updateStreak();
       }
-      setIsTracking(false);
       setStartTime(null);
       setMovementData([]);
     } else {
@@ -160,7 +160,7 @@ export default function App() {
   };
 
   return (
-    <View style={[styles.container, isTracking && styles.trackingContainer, userData.testingMode && styles.testingContainer]}>
+    <View style={[styles.container, userData.testingMode && styles.testingContainer]}>
        <View style={styles.header}>
         <TouchableOpacity onPress={() => setShowSettings(true)}>
           <Text style={{fontSize: 24}}>⚙️</Text>
@@ -210,14 +210,13 @@ export default function App() {
 
       {isTracking && <Text style={styles.trackingIndicator}>Recording Sleep...</Text>}
       <View style={styles.statsContainer}>
-        <Text style={styles.statText}>Sleep Streak: {userData.streak}</Text>
         <Text style={styles.statText}>Tokens: {userData.tokens}</Text>
       </View>
       <View style={styles.buttonContainer}>
         <TouchableOpacity style={styles.button} onPress={toggleTracking}>
           <Text style={styles.buttonText}>{isTracking ? 'Stop Tracking' : 'Start Tracking'}</Text>
         </TouchableOpacity>
-        <Button title="Claim Tokens" onPress={claimTokens} disabled={!canClaimTokens} />
+        {!isTracking && canClaimTokens && <Button title="Claim Tokens" onPress={claimTokens} />}
       </View>
     </View>
   );
@@ -240,9 +239,6 @@ const styles = StyleSheet.create({
     top: 40,
     right: 20,
     zIndex: 1, // Ensure header is on top
-  },
-  trackingContainer: {
-    backgroundColor: '#add8e6',
   },
   testingContainer: {
     backgroundColor: '#d4edda', // Light green for testing mode

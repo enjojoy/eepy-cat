@@ -3,19 +3,26 @@ import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, FlatList } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SleepData } from '@/types/sleep';
+import { UserData } from '@/types/user';
 
 const SLEEP_STORAGE_KEY = '@sleepData';
+const USER_STORAGE_KEY = '@userData';
 
 export default function RecordingsScreen() {
   const [sleepData, setSleepData] = useState<SleepData[]>([]);
+  const [userData, setUserData] = useState<UserData | null>(null);
 
   useEffect(() => {
     const loadData = async () => {
       try {
         const storedSleepData = await AsyncStorage.getItem(SLEEP_STORAGE_KEY);
         if (storedSleepData) setSleepData(JSON.parse(storedSleepData));
+
+        const storedUserData = await AsyncStorage.getItem(USER_STORAGE_KEY);
+        if (storedUserData) setUserData(JSON.parse(storedUserData));
+
       } catch (error) {
-        console.error('Failed to load sleep data.', error);
+        console.error('Failed to load data.', error);
       }
     };
 
@@ -36,6 +43,7 @@ export default function RecordingsScreen() {
 
   return (
     <View style={styles.container}>
+      {userData && <Text style={styles.streakText}>Sleep Streak: {userData.streak}</Text>}
       <FlatList
         data={sleepData}
         renderItem={renderItem}
@@ -59,7 +67,11 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 10,
     marginBottom: 10,
-    borderColor: '#ccc',
-    borderWidth: 1,
+  },
+  streakText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 15,
   },
 });
