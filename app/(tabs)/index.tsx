@@ -1,73 +1,219 @@
 
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Button, Modal, Switch } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Gyroscope } from 'expo-sensors';
+import { SleepData } from '@/types/sleep';
+import { UserData } from '@/types/user';
 
-// Keep data for the last 5 minutes (300 seconds)
-const DATA_RETENTION_PERIOD = 300 * 1000; // 5 minutes in milliseconds
+const SLEEP_STORAGE_KEY = '@sleepData';
+const USER_STORAGE_KEY = '@userData';
+
+const getTodayDateString = () => new Date().toISOString().split('T')[0];
 
 export default function App() {
+  const [isTracking, setIsTracking] = useState(false);
+  const [startTime, setStartTime] = useState<number | null>(null);
   const [movementData, setMovementData] = useState<{ timestamp: number; movement: number }[]>([]);
-  const [avg1min, setAvg1min] = useState(0);
-  const [avg5min, setAvg5min] = useState(0);
-  const [isMovingMore, setIsMovingMore] = useState(false);
-  const [backgroundColor, setBackgroundColor] = useState('white');
-
+  const [userData, setUserData] = useState<UserData>({ streak: 0, lastSleepDate: null, tokens: 0, lastClaimDate: null, testingMode: false });
+  const [canClaimTokens, setCanClaimTokens] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   useEffect(() => {
-    let subscription;
-    const subscribe = async () => {
-      await Gyroscope.isAvailableAsync();
-      subscription = Gyroscope.addListener(gyroscopeData => {
-        const { x, y, z } = gyroscopeData;
-        const movement = Math.abs(x) + Math.abs(y) + Math.abs(z);
-        const timestamp = Date.now();
-
-        setMovementData(prevData => {
-          const newData = [...prevData, { timestamp, movement }];
-          // Prune data older than 5 minutes
-          return newData.filter(d => timestamp - d.timestamp < DATA_RETENTION_PERIOD);
-        });
-
-        if (movement > 1) {
-            const red = Math.floor(Math.random() * 256);
-            const green = Math.floor(Math.random() * 256);
-            const blue = Math.floor(Math.random() * 256);
-            setBackgroundColor(`rgb(${red}, ${green}, ${blue})`);
+    const loadData = async () => {
+      try {
+        const storedUserData = await AsyncStorage.getItem(USER_STORAGE_KEY);
+        if (storedUserData) {
+          const parsedUserData = JSON.parse(storedUserData);
+          setUserData({ ...{ streak: 0, lastSleepDate: null, tokens: 0, lastClaimDate: null, testingMode: false }, ...parsedUserData });
+        } else {
+          await saveUserData({ streak: 0, lastSleepDate: null, tokens: 0, lastClaimDate: null, testingMode: false });
         }
-      });
-      Gyroscope.setUpdateInterval(1000); // Once per second
+      } catch (error) {
+        console.error('Failed to load data.', error);
+      }
     };
-    subscribe();
-    return () => subscription && subscription.remove();
+    loadData();
   }, []);
 
   useEffect(() => {
-    const now = Date.now();
-    const oneMinuteAgo = now - 60 * 1000;
-    const fiveMinutesAgo = now - 300 * 1000;
+    const today = getTodayDateString();
+    if (userData.testingMode) {
+        setCanClaimTokens(true);
+        return;
+    }
 
-    const data1min = movementData.filter(d => d.timestamp > oneMinuteAgo);
-    const data5min = movementData.filter(d => d.timestamp > fiveMinutesAgo);
+    if (userData.lastSleepDate && userData.lastSleepDate !== today && userData.lastClaimDate !== today) {
+      setCanClaimTokens(true);
+    } else {
+      setCanClaimTokens(false);
+    }
+  }, [userData]);
 
-    const sum1min = data1min.reduce((acc, curr) => acc + curr.movement, 0);
-    const sum5min = data5min.reduce((acc, curr) => acc + curr.movement, 0);
+  useEffect(() => {
+    let subscription;
+    if (isTracking) {
+      Gyroscope.isAvailableAsync().then(isAvailable => {
+        if (isAvailable) {
+          subscription = Gyroscope.addListener(gyroscopeData => {
+            const { x, y, z } = gyroscopeData;
+            const movement = Math.abs(x) + Math.abs(y) + Math.abs(z);
+            setMovementData(prevData => [...prevData, { timestamp: Date.now(), movement }]);
+          });
+          Gyroscope.setUpdateInterval(1000);
+        }
+      });
+    }
+    return () => subscription?.remove();
+  }, [isTracking]);
 
-    const newAvg1min = data1min.length > 0 ? sum1min / data1min.length : 0;
-    const newAvg5min = data5min.length > 0 ? sum5min / data5min.length : 0;
+  const saveSleepData = async (data: SleepData[]) => {
+    try {
+      await AsyncStorage.setItem(SLEEP_STORAGE_KEY, JSON.stringify(data));
+    } catch (error) {
+      console.error('Failed to save sleep data.', error);
+    }
+  };
 
-    setAvg1min(newAvg1min);
-    setAvg5min(newAvg5min);
-    setIsMovingMore(newAvg1min > newAvg5min);
-  }, [movementData]);
+  const saveUserData = async (data: UserData) => {
+    try {
+      await AsyncStorage.setItem(USER_STORAGE_KEY, JSON.stringify(data));
+      setUserData(data);
+    } catch (error) {
+      console.error('Failed to save user data.', error);
+    }
+  };
+
+  const updateStreak = async () => {
+    const today = new Date();
+    const todayDateString = today.toISOString().split('T')[0];
+
+    const storedSleepData = await AsyncStorage.getItem(SLEEP_STORAGE_KEY);
+    const sleepData = storedSleepData ? JSON.parse(storedSleepData) : [];
+
+    if (userData.lastSleepDate) {
+      const lastSleep = new Date(userData.lastSleepDate);
+      const diffTime = today.getTime() - lastSleep.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+      if (diffDays === 1) {
+        await saveUserData({ ...userData, streak: userData.streak + 1, lastSleepDate: todayDateString });
+      } else if (diffDays > 1) {
+        await saveUserData({ ...userData, streak: 1, lastSleepDate: todayDateString });
+      }
+    } else {
+      await saveUserData({ ...userData, streak: 1, lastSleepDate: todayDateString });
+    }
+  };
+
+  const toggleTracking = async () => {
+    if (isTracking) {
+      const endTime = Date.now();
+      if (startTime) {
+        const duration = endTime - startTime;
+        const newSleepEntry: SleepData = { startTime, endTime, duration, movementData };
+        
+        const storedSleepData = await AsyncStorage.getItem(SLEEP_STORAGE_KEY);
+    	const sleepData = storedSleepData ? JSON.parse(storedSleepData) : [];
+        const updatedSleepData = [...sleepData, newSleepEntry];
+        
+        await saveSleepData(updatedSleepData);
+        await updateStreak();
+      }
+      setIsTracking(false);
+      setStartTime(null);
+      setMovementData([]);
+    } else {
+      setIsTracking(true);
+      setStartTime(Date.now());
+    }
+  };
+  
+  const clearData = async () => {
+    try {
+      await AsyncStorage.multiRemove([SLEEP_STORAGE_KEY, USER_STORAGE_KEY]);
+      const initialUserData = { streak: 0, lastSleepDate: null, tokens: 0, lastClaimDate: null, testingMode: false };
+      setUserData(initialUserData);
+      await saveUserData(initialUserData);
+    } catch (error) {
+      console.error('Failed to clear data.', error);
+    }
+  };
+
+  const claimTokens = () => {
+    if (canClaimTokens) {
+      const tokensToClaim = 10 + userData.streak;
+      const today = getTodayDateString();
+      
+      if (userData.testingMode) {
+        saveUserData({ ...userData, tokens: userData.tokens + tokensToClaim });
+      } else {
+        saveUserData({ ...userData, tokens: userData.tokens + tokensToClaim, lastClaimDate: today });
+        setCanClaimTokens(false);
+      }
+    }
+  };
+
+  const toggleTestingMode = () => {
+    const newTestingMode = !userData.testingMode;
+    saveUserData({ ...userData, testingMode: newTestingMode });
+  };
 
   return (
-    <View style={[styles.container, { backgroundColor }]}>
-      <Text style={styles.text}>1-min avg movement: {avg1min.toFixed(2)}</Text>
-      <Text style={styles.text}>5-min avg movement: {avg5min.toFixed(2)}</Text>
-      <Text style={styles.text}>
-        {isMovingMore ? 'Moving more now than in the last 5 minutes' : 'Moving less now than in the last 5 minutes'}
-      </Text>
+    <View style={[styles.container, isTracking && styles.trackingContainer, userData.testingMode && styles.testingContainer]}>
+       <View style={styles.header}>
+        <TouchableOpacity onPress={() => setShowSettings(true)}>
+          <Text style={{fontSize: 24}}>⚙️</Text>
+        </TouchableOpacity>
+      </View>
+
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={showSettings}
+        onRequestClose={() => {
+          setShowSettings(!showSettings);
+        }}>
+        <View style={styles.centeredView}>
+          <View style={styles.modalView}>
+            <View style={styles.settingRow}>
+                <Text style={styles.settingText}>Testing Mode</Text>
+                <Switch
+                    trackColor={{ false: '#767577', true: '#81b0ff' }}
+                    thumbColor={userData.testingMode ? '#f5dd4b' : '#f4f3f4'}
+                    ios_backgroundColor="#3e3e3e"
+                    onValueChange={toggleTestingMode}
+                    value={userData.testingMode}
+                />
+            </View>
+            <TouchableOpacity
+              style={styles.clearButton}
+              onPress={() => {
+                clearData();
+                setShowSettings(false);
+              }}>
+              <Text style={styles.buttonText}>Clear All Data</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={{...styles.button, marginTop: 15, backgroundColor: '#6c757d'}}
+              onPress={() => setShowSettings(!showSettings)}>
+              <Text style={styles.buttonText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {isTracking && <Text style={styles.trackingIndicator}>Recording Sleep...</Text>}
+      <View style={styles.statsContainer}>
+        <Text style={styles.statText}>Sleep Streak: {userData.streak}</Text>
+        <Text style={styles.statText}>Tokens: {userData.tokens}</Text>
+      </View>
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity style={styles.button} onPress={toggleTracking}>
+          <Text style={styles.buttonText}>{isTracking ? 'Stop Tracking' : 'Start Tracking'}</Text>
+        </TouchableOpacity>
+        <Button title="Claim Tokens" onPress={claimTokens} disabled={!canClaimTokens} />
+      </View>
     </View>
   );
 }
@@ -77,12 +223,95 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 20,
+    paddingTop: 80, // Increased top padding
   },
-  text: {
-    fontSize: 20,
+  header: {
+    width: '100%',
+    paddingHorizontal: 10,
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    position: 'absolute',
+    top: 40,
+    right: 20,
+    zIndex: 1, // Ensure header is on top
+  },
+  trackingContainer: {
+    backgroundColor: '#add8e6',
+  },
+  testingContainer: {
+    backgroundColor: '#d4edda', // Light green for testing mode
+  },
+  trackingIndicator: {
+    fontSize: 24,
     fontWeight: 'bold',
+    color: '#000080',
+    marginBottom: 10,
+  },
+  statsContainer: {
+    marginBottom: 20,
+    alignItems: 'center',
+  },
+  statText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  buttonContainer: {
+    width: '100%',
+    padding: 10, 
+    alignItems: 'center',
+  },
+  button: {
+    backgroundColor: '#007BFF',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 10,
+    width: '80%',
+    alignItems: 'center',
+  },
+  clearButton: {
+    backgroundColor: '#FF3B30',
+    padding: 15,
+    borderRadius: 10,
+    width: '80%',
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  buttonText: {
     color: 'white',
+    fontSize: 18,
     textAlign: 'center',
-    marginVertical: 10,
+  },
+  centeredView: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)', // Semi-transparent background
+  },
+  modalView: {
+    margin: 20,
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 35,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+    width: '80%',
+  },
+  settingRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+    marginBottom: 20,
+  },
+  settingText: {
+    fontSize: 18,
   },
 });
