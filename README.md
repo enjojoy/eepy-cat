@@ -6,6 +6,16 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
 
 ## Get started
 
+### Running on a physical device
+
+To run the app on a physical device, you can use the following command:
+
+```bash
+npm run start -- --tunnel
+```
+
+This will generate a QR code that you can scan with the Expo Go app on your iOS or Android device.
+
 #### Android
 
 Android previews are defined as a `workspace.onStart` hook and started as a vscode task when the workspace is opened/started.
