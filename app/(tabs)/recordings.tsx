@@ -38,6 +38,8 @@ export default function RecordingsScreen() {
     clearData, 
     toggleTestingMode,
     loadAllRecordings,
+    hasPendingWalletRequest,
+    setShowWalletModal,
   } = useRecording();
 
   const [showSettings, setShowSettings] = useState(false);
@@ -45,17 +47,20 @@ export default function RecordingsScreen() {
   useFocusEffect(
     useCallback(() => {
       loadAllRecordings();
-    }, [loadAllRecordings])
+      if (hasPendingWalletRequest) {
+        setShowWalletModal(true);
+      }
+    }, [loadAllRecordings, hasPendingWalletRequest, setShowWalletModal])
   );
 
   const renderItem = ({ item }: { item: SleepData }) => {
     const totalMovement = item.movementData.reduce((acc, curr) => acc + curr.movement, 0);
     return (
       <View style={styles.sleepItem}>
-        <Text style={styles.baseText}>Start: {new Date(item.startTime).toLocaleString()}</Text>
-        <Text style={styles.baseText}>End: {new Date(item.endTime).toLocaleString()}</Text>
-        <Text style={styles.baseText}>Duration: {(item.duration / 1000 / 60).toFixed(2)} minutes</Text>
-        <Text style={styles.baseText}>Total Movement: {totalMovement.toFixed(2)}</Text>
+        <Text style={styles.itemText}>Start: {new Date(item.startTime).toLocaleString()}</Text>
+        <Text style={styles.itemText}>End: {new Date(item.endTime).toLocaleString()}</Text>
+        <Text style={styles.itemText}>Duration: {(item.duration / 1000 / 60).toFixed(2)} minutes</Text>
+        <Text style={styles.itemText}>Total Movement: {totalMovement.toFixed(2)}</Text>
       </View>
     );
   };
@@ -128,6 +133,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
+    backgroundColor: '#190e1c', // Dark background color
   },
   header: {
     width: '100%',
@@ -143,10 +149,15 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   sleepItem: {
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#2a1a30', // Darker item background
     padding: 15,
     borderRadius: 10,
     marginBottom: 10,
+  },
+  itemText: {
+    color: '#fff',
+    fontFamily: 'Jersey25-Regular',
+    fontSize: 16,
   },
   streakText: {
     fontSize: 20,
@@ -155,6 +166,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     marginTop: 60, // Adjust margin to not be overlapped by header
     fontFamily: 'Jersey25-Regular',
+    color: '#fff',
   },
   centeredView: {
     flex: 1,

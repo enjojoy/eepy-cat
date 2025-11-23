@@ -4,4 +4,5 @@ export interface UserData {
   tokens: number;
   lastClaimDate: string | null;
   testingMode?: boolean;
+  walletAddress?: string;
 }

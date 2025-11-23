@@ -78,46 +78,48 @@ export default function App() {
 
   return (
     <View style={[styles.container, userData?.testingMode && styles.testingContainer]}>
-       {isTracking && stars.map(star => (
-        <Star key={star.id} style={{ top: star.top, left: star.left }} />
-      ))}
-      {isTracking ? (
-        <View style={styles.mascotContainer}>
-          <Image
-            source={require('../../assets/images/sleeping_cat.png')}
-            style={styles.mascot}
-          />
-        </View>
-      ) : (
-        <ImageBackground
-          source={require('../../assets/images/awake_cat.png')}
-          style={styles.mascot}
-        >
-          <Animated.Image
-            source={require('../../assets/images/chatbox.png')}
-            style={[styles.chatbox, { opacity: fadeAnim }]}
-          />
-        </ImageBackground>
-      )}
+        <>
+          {isTracking && stars.map(star => (
+            <Star key={star.id} style={{ top: star.top, left: star.left }} />
+          ))}
+          {isTracking ? (
+            <View style={styles.mascotContainer}>
+              <Image
+                source={require('../../assets/images/sleeping_cat.png')}
+                style={styles.mascot}
+              />
+            </View>
+          ) : (
+            <ImageBackground
+              source={require('../../assets/images/awake_cat.png')}
+              style={styles.mascot}
+            >
+              <Animated.Image
+                source={require('../../assets/images/chatbox.png')}
+                style={[styles.chatbox, { opacity: fadeAnim }]}
+              />
+            </ImageBackground>
+          )}
 
-      <View style={styles.statsContainer}>
-        <Text style={styles.statText}>Tokens: {userData?.tokens ?? 0}</Text>
-      </View>
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.button} onPress={isTracking ? toggleTracking : handleStartTracking}>
-          <Text style={styles.buttonText}>{isTracking ? 'Stop Tracking' : 'Start Tracking'}</Text>
-        </TouchableOpacity>
-        <View style={styles.bottomContentContainer}>
-            {isTracking ? (
-                <Text style={styles.trackingIndicator}>Recording Sleep...</Text>
-            ) : (
-                canClaimTokens &&
-                <TouchableOpacity style={styles.button} onPress={claimTokens}>
-                  <Text style={styles.buttonText}>Claim Tokens</Text>
-                </TouchableOpacity>
-            )}
-        </View>
-      </View>
+          <View style={styles.statsContainer}>
+            <Text style={styles.statText}>Tokens: {userData?.tokens ?? 0}</Text>
+          </View>
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity style={styles.button} onPress={isTracking ? toggleTracking : handleStartTracking}>
+              <Text style={styles.buttonText}>{isTracking ? 'Stop Tracking' : 'Start Tracking'}</Text>
+            </TouchableOpacity>
+            <View style={styles.bottomContentContainer}>
+                {isTracking ? (
+                    <Text style={styles.trackingIndicator}>Recording Sleep...</Text>
+                ) : (
+                    canClaimTokens &&
+                    <TouchableOpacity style={styles.button} onPress={claimTokens}>
+                      <Text style={styles.buttonText}>Claim Tokens</Text>
+                    </TouchableOpacity>
+                )}
+            </View>
+          </View>
+        </>
     </View>
   );
 }

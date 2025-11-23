@@ -22,6 +22,13 @@ interface RecordingContextType {
   claimTokens: () => void;
   toggleTestingMode: () => void;
   loadAllRecordings: () => void;
+  showWalletModal: boolean;
+  setShowWalletModal: (visible: boolean) => void;
+  walletAddress: string;
+  setWalletAddress: (address: string) => void;
+  saveWalletAddress: (address: string) => void;
+  hasPendingWalletRequest: boolean;
+  setHasPendingWalletRequest: (pending: boolean) => void;
 }
 
 const RecordingContext = createContext<RecordingContextType | undefined>(undefined);
@@ -46,6 +53,9 @@ export const RecordingProvider = ({ children }: RecordingProviderProps) => {
   const [allRecordings, setAllRecordings] = useState<SleepData[]>([]);
   const [userData, setUserData] = useState<UserData | null>(null);
   const [canClaimTokens, setCanClaimTokens] = useState(false);
+  const [showWalletModal, setShowWalletModal] = useState(false);
+  const [walletAddress, setWalletAddress] = useState('');
+  const [hasPendingWalletRequest, setHasPendingWalletRequest] = useState(false);
 
   const getTodayDateString = () => new Date().toISOString().split('T')[0];
 
@@ -161,6 +171,10 @@ export const RecordingProvider = ({ children }: RecordingProviderProps) => {
       const endTime = Date.now();
       if (startTime) {
         const duration = endTime - startTime;
+        const totalMovement = movementData.reduce((acc, data) => acc + data.movement, 0);
+        if (duration > 15000 && totalMovement < 1) {
+          setHasPendingWalletRequest(true);
+        }
         const newSleepEntry: SleepData = { startTime, endTime, duration, movementData };
         setLastRecording(newSleepEntry);
         
@@ -170,7 +184,7 @@ export const RecordingProvider = ({ children }: RecordingProviderProps) => {
         
         await saveSleepData(updatedSleepData);
         await updateStreak();
-        loadAllRecordings(); // Reload all recordings
+        loadAllRecordings();
       }
       setStartTime(null);
       setMovementData([]);
@@ -216,9 +230,37 @@ export const RecordingProvider = ({ children }: RecordingProviderProps) => {
       saveUserData({ ...userData, testingMode: newTestingMode });
     }
   };
+
+  const saveWalletAddress = async (address: string) => {
+    if (userData) {
+      await saveUserData({ ...userData, walletAddress: address });
+      setHasPendingWalletRequest(false);
+    }
+  };
   
   return (
-    <RecordingContext.Provider value={{ isTracking, startTime, movementData, lastRecording, allRecordings, toggleTracking, userData, loadData, clearData, canClaimTokens, claimTokens, toggleTestingMode, loadAllRecordings }}>
+    <RecordingContext.Provider value={{
+      isTracking,
+      startTime,
+      movementData,
+      lastRecording,
+      allRecordings,
+      toggleTracking,
+      userData,
+      loadData,
+      clearData,
+      canClaimTokens,
+      claimTokens,
+      toggleTestingMode,
+      loadAllRecordings,
+      showWalletModal,
+      setShowWalletModal,
+      walletAddress,
+      setWalletAddress,
+      saveWalletAddress,
+      hasPendingWalletRequest,
+      setHasPendingWalletRequest,
+    }}>
       {children}
     </RecordingContext.Provider>
   );

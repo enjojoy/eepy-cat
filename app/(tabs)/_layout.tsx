@@ -1,40 +1,67 @@
 
-import { Tabs } from 'expo-router';
 import React from 'react';
-import { FontAwesome } from '@expo/vector-icons';
-import { RecordingProvider } from '../context/RecordingContext';
+import { Tabs } from 'expo-router';
+import { useRecording } from '../context/RecordingContext';
+import { View, Text } from 'react-native';
+
+function TabBarIcon(props: {
+  name: React.ComponentProps<typeof import('@expo/vector-icons').FontAwesome>['name'];
+  color: string;
+  showNotification?: boolean;
+}) {
+  const { FontAwesome } = require('@expo/vector-icons');
+  return (
+    <View style={{ width: 28, height: 28, position: 'relative' }}>
+      <FontAwesome size={28} style={{ marginBottom: -3 }} {...props} />
+      {props.showNotification && (
+        <View
+          style={{
+            position: 'absolute',
+            right: 0,
+            top: 0,
+            backgroundColor: 'red',
+            borderRadius: 5,
+            width: 10,
+            height: 10,
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+        >
+          <Text style={{ color: 'white', fontSize: 8 }}>1</Text>
+        </View>
+      )}
+    </View>
+  );
+}
 
 export default function TabLayout() {
+  const { hasPendingWalletRequest } = useRecording();
+
   return (
-    <RecordingProvider>
-      <Tabs>
-        <Tabs.Screen
-          name="index"
-          options={{
-            title: 'Home',
-            headerShown: false,
-            tabBarIcon: ({ color, size }) => (
-              <FontAwesome name="home" size={size} color={color} />
-            ),
-            tabBarLabelStyle: {
-              fontFamily: 'Jersey25-Regular',
-            },
-          }}
-        />
-        <Tabs.Screen
-          name="recordings"
-          options={{
-            title: 'Recordings',
-            headerShown: false,
-            tabBarIcon: ({ color, size }) => (
-              <FontAwesome name="book" size={size} color={color} />
-            ),
-            tabBarLabelStyle: {
-              fontFamily: 'Jersey25-Regular',
-            },
-          }}
-        />
-      </Tabs>
-    </RecordingProvider>
+    <Tabs
+      screenOptions={{
+        tabBarActiveTintColor: '#fff',
+        tabBarInactiveTintColor: 'gray',
+        tabBarStyle: {
+          backgroundColor: '#190e1c',
+        },
+      }}>
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: 'Home',
+          tabBarIcon: ({ color }) => <TabBarIcon name="home" color={color} />,
+          headerShown: false,
+        }}
+      />
+      <Tabs.Screen
+        name="recordings"
+        options={{
+          title: 'Recordings',
+          tabBarIcon: ({ color }) => <TabBarIcon name="list" color={color} showNotification={hasPendingWalletRequest} />,
+          headerShown: false,
+        }}
+      />
+    </Tabs>
   );
 }
