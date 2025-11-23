@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, Text, View, FlatList, Modal, Switch, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, View, FlatList, Modal, Switch, TouchableOpacity, Vibration } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { useRecording } from '../context/RecordingContext';
 import { SleepData } from '@/types/sleep';
@@ -20,6 +20,14 @@ const LiveRecording = () => {
     }, [startTime]);
 
     const totalMovement = movementData.reduce((acc, curr) => acc + curr.movement, 0);
+
+    useEffect(() => {
+        if (totalMovement > 10) {
+            Vibration.vibrate([100, 200, 100, 200]); 
+        } else if (totalMovement > 5) {
+            Vibration.vibrate();
+        }
+    }, [totalMovement]);
 
     return (
         <View style={styles.liveRecordingContainer}>

@@ -1,3 +1,4 @@
+// test/GyroReward.test.js
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const snarkjs = require("snarkjs");
@@ -16,9 +17,11 @@ describe("GyroReward Contract", function () {
         await verifier.waitForDeployment?.() || await verifier.deployed?.();
 
         // Deploy the GyroReward contract
-        const GyroReward = await ethers.getContractFactory("GyroReward");
+        const [owner] = await ethers.getSigners();
+        const GyroReward = await ethers.getContractFactory("GyroRewardStreak");
         const verifierAddress = verifier.address || await verifier.getAddress?.();
-        gyroReward = await GyroReward.deploy(verifierAddress);
+        const ownerAddress = owner.address || await owner.getAddress?.();
+        gyroReward = await GyroReward.deploy(verifierAddress, ownerAddress);
         await gyroReward.waitForDeployment?.() || await gyroReward.deployed?.();
 
         // Load circuit files
@@ -47,45 +50,95 @@ describe("GyroReward Contract", function () {
         const proofData = await generateValidProof(5, REQUIRED_MAX);
 
         const ownerAddress = owner.address || await owner.getAddress?.();
-        const tx = await gyroReward.claimReward(proofData.a, proofData.b, proofData.c, proofData.pubSignals);
+        const tx = await gyroReward.claimReward(ownerAddress, proofData.a, proofData.b, proofData.c, proofData.pubSignals);
         await expect(tx)
             .to.emit(gyroReward, "RewardClaimed")
-            .withArgs(ownerAddress, (value) => value.gt(0)); // timestamp should be > 0
+            .withArgs(
+                ownerAddress,
+                (value) => value.gt(0), // timestamp should be > 0
+                (value) => value.eq(1), // streak should be 1 for first claim
+                (value) => value.eq(1)  // score should be 1 for first claim
+            );
 
         const lastClaim = await gyroReward.lastClaimedTimestamp(owner.address);
         expect(lastClaim).to.be.gt(0);
     });
 
-    it("Should allow a user to claim multiple times (no waiting period)", async function () {
-        // Since waiting period is removed, users can claim multiple times
+    it("Should allow a user to claim multiple times after waiting period", async function () {
+        const [, addr1] = await ethers.getSigners(); // Use a different address to avoid conflicts
+        const addr1Address = addr1.address || await addr1.getAddress?.();
         const proofData1 = await generateValidProof(5, REQUIRED_MAX);
         const proofData2 = await generateValidProof(6, REQUIRED_MAX);
         
-        await expect(gyroReward.claimReward(proofData1.a, proofData1.b, proofData1.c, proofData1.pubSignals))
+        // First claim
+        await expect(gyroReward.connect(addr1).claimReward(addr1Address, proofData1.a, proofData1.b, proofData1.c, proofData1.pubSignals))
             .to.emit(gyroReward, "RewardClaimed");
         
-        // Should be able to claim again immediately
-        await expect(gyroReward.claimReward(proofData2.a, proofData2.b, proofData2.c, proofData2.pubSignals))
+        // Advance time by CLAIM_PERIOD (1 day) to allow second claim
+        const claimPeriod = await gyroReward.CLAIM_PERIOD();
+        await ethers.provider.send("evm_increaseTime", [Number(claimPeriod)]);
+        await ethers.provider.send("evm_mine", []);
+        
+        // Should be able to claim again after waiting period
+        await expect(gyroReward.connect(addr1).claimReward(addr1Address, proofData2.a, proofData2.b, proofData2.c, proofData2.pubSignals))
             .to.emit(gyroReward, "RewardClaimed");
     });
 
     it("Should FAIL if the proof uses the wrong MAX value", async function () {
-        const [, addr1] = await ethers.getSigners();
+        const [, , addr2] = await ethers.getSigners(); // Use addr2 to avoid conflicts
+        const addr2Address = addr2.address || await addr2.getAddress?.();
         const WRONG_MAX = 20;
         const proofData = await generateValidProof(5, WRONG_MAX);
         
-        await expect(gyroReward.connect(addr1).claimReward(proofData.a, proofData.b, proofData.c, proofData.pubSignals))
-            .to.be.revertedWith("GyroReward: The proof must use the required MAX value.");
+        await expect(gyroReward.connect(addr2).claimReward(addr2Address, proofData.a, proofData.b, proofData.c, proofData.pubSignals))
+            .to.be.revertedWith("GyroReward: Wrong MAX value");
     });
     
     it("Should FAIL if a valid proof's components are tampered with", async function () {
         const [, , , addr3] = await ethers.getSigners();
+        const addr3Address = addr3.address || await addr3.getAddress?.();
         const proofData = await generateValidProof(5, REQUIRED_MAX);
 
         // Tamper with the proof's 'a' component
         proofData.a[0] = "0x0000000000000000000000000000000000000000000000000000000000000001";
 
-        await expect(gyroReward.connect(addr3).claimReward(proofData.a, proofData.b, proofData.c, proofData.pubSignals))
-            .to.be.revertedWith("GyroReward: The provided proof is invalid.");
+        await expect(gyroReward.connect(addr3).claimReward(addr3Address, proofData.a, proofData.b, proofData.c, proofData.pubSignals))
+            .to.be.revertedWith("GyroReward: Invalid proof");
+    });
+
+    it("Should allow claiming rewards on behalf of another address", async function () {
+        const [, , , , claimer, beneficiary] = await ethers.getSigners(); // Use fresh addresses
+        const claimerAddress = claimer.address || await claimer.getAddress?.();
+        const beneficiaryAddress = beneficiary.address || await beneficiary.getAddress?.();
+        const proofData = await generateValidProof(5, REQUIRED_MAX);
+
+        // Verify claimer has no streak/score before
+        const claimerStreakBefore = await gyroReward.streak(claimerAddress);
+        const claimerScoreBefore = await gyroReward.score(claimerAddress);
+        expect(claimerStreakBefore).to.eq(0);
+        expect(claimerScoreBefore).to.eq(0);
+
+        // Claimer claims reward for beneficiary
+        const tx = await gyroReward.connect(claimer).claimReward(beneficiaryAddress, proofData.a, proofData.b, proofData.c, proofData.pubSignals);
+        await expect(tx)
+            .to.emit(gyroReward, "RewardClaimed")
+            .withArgs(
+                beneficiaryAddress, // Reward goes to beneficiary, not claimer
+                (value) => value.gt(0),
+                (value) => value.eq(1),
+                (value) => value.eq(1)
+            );
+
+        // Verify beneficiary's streak and score were updated
+        const streak = await gyroReward.streak(beneficiaryAddress);
+        const score = await gyroReward.score(beneficiaryAddress);
+        expect(streak).to.eq(1);
+        expect(score).to.eq(1);
+
+        // Verify claimer's streak and score were NOT updated
+        const claimerStreak = await gyroReward.streak(claimerAddress);
+        const claimerScore = await gyroReward.score(claimerAddress);
+        expect(claimerStreak).to.eq(0);
+        expect(claimerScore).to.eq(0);
     });
 });
