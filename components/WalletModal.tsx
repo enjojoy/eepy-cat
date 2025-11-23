@@ -22,7 +22,7 @@ const WalletModal = () => {
         style={styles.centeredView}
       >
         <View style={styles.modalView}>
-          <Text style={styles.modalText}>Enter your ENS or wallet address:</Text>
+          <Text style={styles.modalText}>Enter your wallet address:</Text>
           <TextInput
             style={styles.input}
             onChangeText={setWalletAddress}

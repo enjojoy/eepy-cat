@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Image, ImageBackground, Animated, Dimensions } from 'react-native';
 import { useRecording } from '../context/RecordingContext';
@@ -76,12 +75,28 @@ export default function App() {
     });
   };
 
+  const claimButtonText = userData?.testingMode ? '+ Claim Tokens (Test)' : '+ Claim Tokens';
+
   return (
-    <View style={[styles.container, userData?.testingMode && styles.testingContainer]}>
+    <View style={styles.container}>
+        {userData?.testingMode && (
+            <View style={styles.testBadge}>
+                <Text style={styles.testBadgeText}>TEST MODE</Text>
+            </View>
+        )}
         <>
           {isTracking && stars.map(star => (
             <Star key={star.id} style={{ top: star.top, left: star.left }} />
           ))}
+          
+          {!isTracking && (
+              <View style={styles.streakContainer}>
+                  <Text style={styles.streakText}>
+                      Current Streak: <Text style={styles.streakValue}>{userData?.streak || 0}</Text> days
+                  </Text>
+              </View>
+          )}
+
           {isTracking ? (
             <View style={styles.mascotContainer}>
               <Image
@@ -102,7 +117,8 @@ export default function App() {
           )}
 
           <View style={styles.statsContainer}>
-            <Text style={styles.statText}>Tokens: {userData?.tokens ?? 0}</Text>
+            <Image source={require('../../assets/images/star.png')} style={styles.tokenIcon} />
+            <Text style={styles.statText}>{userData?.tokens ?? 0}</Text>
           </View>
           <View style={styles.buttonContainer}>
             <TouchableOpacity style={styles.button} onPress={isTracking ? toggleTracking : handleStartTracking}>
@@ -114,7 +130,7 @@ export default function App() {
                 ) : (
                     canClaimTokens &&
                     <TouchableOpacity style={styles.button} onPress={claimTokens}>
-                      <Text style={styles.buttonText}>Claim Tokens</Text>
+                      <Text style={styles.buttonText}>{claimButtonText}</Text>
                     </TouchableOpacity>
                 )}
             </View>
@@ -132,9 +148,6 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingTop: 80, // Increased top padding
     backgroundColor: '#190e1c',
-  },
-  testingContainer: {
-    backgroundColor: '#d4edda', // Light green for testing mode
   },
   mascotContainer: {
     width: 350,
@@ -161,12 +174,32 @@ const styles = StyleSheet.create({
     fontFamily: 'Jersey25-Regular',
   },
   statsContainer: {
-    marginBottom: 20,
+    flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: '#2A1F3D',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 30,
+    borderWidth: 2,
+    borderColor: '#D4BFFF',
+    marginBottom: 40, // Increased bottom margin
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.30,
+    shadowRadius: 4.65,
+    elevation: 8,
+  },
+  tokenIcon: {
+    width: 30,
+    height: 30,
+    marginRight: 12,
   },
   statText: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 32,
+    color: '#FFFFFF',
     fontFamily: 'Jersey25-Regular',
   },
   buttonContainer: {
@@ -193,5 +226,42 @@ const styles = StyleSheet.create({
     height: 50,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  testBadge: {
+    position: 'absolute',
+    top: 45,
+    right: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.4)',
+    zIndex: 100,
+  },
+  testBadgeText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+  },
+  streakContainer: {
+    marginBottom: 10,
+    backgroundColor: 'rgba(42, 31, 61, 0.6)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#D4BFFF',
+  },
+  streakText: {
+    fontSize: 18,
+    color: '#E0E0E0',
+    fontFamily: 'Jersey25-Regular',
+  },
+  streakValue: {
+    color: '#FFD700',
+    fontSize: 22,
+    fontWeight: 'bold',
   },
 });
