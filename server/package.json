@@ -1,0 +1,23 @@
+{
+  "name": "claim-server",
+  "version": "1.0.0",
+  "description": "Server to handle claim requests",
+  "main": "dist/index.js",
+  "scripts": {
+    "start": "node dist/index.js",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "ethers": "^6.12.1",
+    "@curvegrid/multibaas-sdk": "^1.1.0",
+    "axios": "^1.7.2",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5",
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.12.12",
+    "ts-node": "^10.9.2"
+  }
+}
