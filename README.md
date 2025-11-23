@@ -1,63 +1,92 @@
-> Edited for use in IDX on 07/09/12
+# Eepy Cat 🐈💤
 
-# Welcome to your Expo app 👋
+**Sleep Soundly. Earn Privately.**
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Eepy Cat is a privacy-first "Proof of Sleep" mobile application. Unlike traditional sleep trackers that harvest biometric data, Eepy Cat runs entirely on-device. It uses **Zero-Knowledge Proofs (ZK-SNARKs)** to verify you've met your sleep goals without ever revealing your raw movement data to a server or blockchain. 
 
-## Get started
+The dashboard related to economic incentives can be found at: https://studio--studio-1679253439-69e11.us-central1.hosted.app/
 
-### Running on a physical device
+## 🏗 Architecture
 
-To run the app on a physical device, you can use the following command:
+This is a **React Native (Expo)** application that interacts with:
+1.  **Local Sensors:** Uses `expo-sensors` to track gyroscope data.
+2.  **ZK Circuits:** Uses `circom` and `snarkjs` (running in a shimmed React Native environment) to generate proofs client-side.
+3.  **Blockchain Relay:** Sends proofs to a backend relay (in the `/server` directory) which submits them to the **SleepRewardManager** contract via **Curvegrid MultiBaas**.
+
+## 🚀 Get Started
+
+### Prerequisites
+
+1.  **Install Dependencies:**
+    ```bash
+    npm install
+    ```
+
+2.  **Backend Setup:**
+    Ensure the backend server and smart contracts are running/deployed.
+    *   Contracts: See `/contracts`
+    *   Server: See `/server`
+
+### Running the App
+
+To run the app on a physical device or emulator, use the following command:
 
 ```bash
 npm run start -- --tunnel
-```
+
+  
 
 This will generate a QR code that you can scan with the Expo Go app on your iOS or Android device.
+🤖 Android (Project IDX Specifics)
 
-#### Android
+Android previews are defined as a workspace.onStart hook and started as a vscode task when the workspace is opened/started.
 
-Android previews are defined as a `workspace.onStart` hook and started as a vscode task when the workspace is opened/started.
+Note: If you can't find the task, either:
 
-Note, if you can't find the task, either:
-- Rebuild the environment (using command palette: `IDX: Rebuild Environment`), or
-- Run `npm run android -- --tunnel` command manually run android and see the output in your terminal. The device should pick up this new command and switch to start displaying the output from it.
+    Rebuild the environment (using command palette: IDX: Rebuild Environment), or
 
-In the output of this command/task, you'll find options to open the app in a
+    Run npm run android -- --tunnel manually to run android and see the output in your terminal. The device should pick up this new command and switch to start displaying the output from it.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+In the output of this command/task, you'll find options to open the app in:
 
-You'll also find options to open the app's developer menu, reload the app, and more.
+    Android emulator
 
-#### Web
+    Expo Go, a limited sandbox for trying out app development with Expo
 
-Web previews will be started and managred automatically. Use the toolbar to manually refresh.
+🌐 Web
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+Web previews will be started and managed automatically. Use the toolbar to manually refresh.
+📂 Project Structure
 
-## Get a fresh project
+    app/: The main React Native frontend (using Expo Router).
 
-When you're ready, run:
+        app/(tabs)/: Main screens (Home, Recordings).
 
-```bash
-npm run reset-project
-```
+        app/context/: RecordingContext manages sensor logic and ZK state.
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+    circuits/: Contains the compiled .wasm and .zkey files needed for client-side proof generation.
 
-## Learn more
+    components/: UI components (Star, WalletModal, etc.).
 
-To learn more about developing your project with Expo, look at the following resources:
+    contracts/: Solidity smart contracts (SleepRewardToken, Verifier).
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+    server/: Express.js middleware acting as a relay to Curvegrid MultiBaas.
 
-## Join the community
+🧪 Testing ZK Proofs
 
-Join our community of developers creating universal apps.
+To ensure the ZK circuits are functioning correctly before running them on mobile:
+code Bash
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+    
+cd contracts
+npx hardhat test
+
+  
+
+📚 Learn more
+
+    Expo documentation: Learn fundamentals.
+
+    Circom & SnarkJS: Documentation for the ZK stack used.
+
+    Curvegrid MultiBaas: Middleware documentation.
