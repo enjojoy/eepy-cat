@@ -33,8 +33,8 @@ To run the app on a physical device or emulator, use the following command:
 
 ```bash
 npm run start -- --tunnel
+```
 
-  
 
 This will generate a QR code that you can scan with the Expo Go app on your iOS or Android device.
 🤖 Android (Project IDX Specifics)
