@@ -1,7 +1,7 @@
 // import { ethers } from "ethers";
 
 // // TODO replace this with the real address
-// const managerAddress = "0xREWARDMANAGER";
+// const managerAddress = "0x5A0cb746460B8542fA72dD3b1A3ECca9323be37D";
 
 // export async function submitProof(proof, pub) {
 //   const provider = new ethers.BrowserProvider(window.ethereum);
